@@ -1,12 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { RedisService } from './redis/redis.service';
 import { MonitorService } from './monitor/monitor.service';
+import { SubscriptionDto } from './subscription.dto';
+import { SubscriptionsService } from './subscriptions/subscriptions.service';
 
 @Injectable()
 export class AppService {
   constructor(
     private readonly redisService: RedisService,
     private readonly monitorService: MonitorService,
+    private readonly subscriptionsService: SubscriptionsService,
   ) {}
 
   async isFacultyRated(faculty: string): Promise<boolean> {
@@ -21,5 +24,13 @@ export class AppService {
       ratedFaculties = result;
     }
     return ratedFaculties.includes(faculty);
+  }
+
+  async subscribeToFaculty(dto: SubscriptionDto): Promise<void> {
+    this.subscriptionsService.addSubscription(
+      dto.deviceId,
+      dto.faculty,
+      dto.fcmToken,
+    );
   }
 }

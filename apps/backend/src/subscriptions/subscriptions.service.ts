@@ -6,10 +6,14 @@ import { subscriptions } from 'src/db/schema';
 export class SubscriptionsService {
   constructor(@Inject(DrizzleDatabase) private readonly db: DatabaseClient) {}
 
-  async addSubscription(deviceId: string, faculty: string) {
-    return await this.db.insert(subscriptions).values({
-      id: deviceId,
-      faculty,
-    });
+  async addSubscription(deviceId: string, faculty: string, fcmToken: string) {
+    return await this.db
+      .insert(subscriptions)
+      .values({
+        id: deviceId,
+        faculty,
+        fcmToken,
+      })
+      .execute();
   }
 }

@@ -1,12 +1,18 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
-import { eq, inArray } from 'drizzle-orm';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { inArray } from 'drizzle-orm';
 import { DatabaseClient, DrizzleDatabase } from 'src/db/drizzle-client';
 import { subscriptions } from 'src/db/schema';
-import { MonitorService } from 'src/monitor/monitor.service';
+import * as admin from 'firebase-admin';
+import { Message } from 'firebase-admin/lib/messaging/messaging-api';
+import * as serviceAccount from './serviceAccount.json';
 
 @Injectable()
-export class NotificationService {
+export class NotificationService implements OnModuleInit {
+  onModuleInit() {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+    });
+  }
   constructor(@Inject(DrizzleDatabase) private readonly db: DatabaseClient) {}
 
   async notifyUpdates(beforeFaculties: string[], afterFaculties: string[]) {
@@ -25,10 +31,15 @@ export class NotificationService {
         .execute();
 
       for (const subscription of subscriptionsToNotify) {
-        console.log(
-          `Notify ${subscription.id} about new faculty: ${subscription.faculty}`,
-        );
-        // Implement your notification logic here, e.g., push notification
+        const message: Message = {
+          notification: {
+            title: 'New Faculty Rated',
+            body: `The faculty ${subscription.faculty} has been rated.`,
+          },
+          token: subscription.fcmToken,
+        };
+
+        admin.messaging().send(message);
       }
     }
   }
